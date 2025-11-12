@@ -52,32 +52,9 @@ export class supabaseHelper {
       .single();
 
     if (otpError || !latestOtp?.verified) {
-      throw new Error('Email verification required. Please verify your email with OTP');
+      throw new Error('Please Verify OTP , sent to your email address');
     }
 
-    return data;
-  }
-
-  async getUserByEmail(email: string) {
-    const { data } = await this.supabaseService
-      .getClient()
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
-    return data;
-  }
-
-  async markEmailVerified(userId: string) {
-    const { data, error } = await this.supabaseService
-      .getClient()
-      .from('users')
-      .update({ email_verified: true })
-      .eq('id', userId)
-      .select()
-      .single();
-
-    if (error) throw new Error(error.message);
     return data;
   }
 

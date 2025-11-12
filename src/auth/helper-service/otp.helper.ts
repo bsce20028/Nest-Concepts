@@ -63,10 +63,9 @@ export class OtpHelper {
       .select('*')
       .eq('otp', otp)
       .eq('verified', false)
-      .order('expires_at', { ascending: false })
+      .eq('user_id', userId)
       .limit(1)
       .single();
-     
 
     if (error || !data) throw new BadRequestException('Invalid OTP');
 
@@ -80,12 +79,6 @@ export class OtpHelper {
       .update({ verified: true })
       .eq('id', data.id);
 
-
-     await this.supabaseService.getClient()
-    .from('users')
-    .update({ email_verified: true })
-    .eq('id', userId);
-
-  return { message: 'OTP verified successfully' };
+    return { message: 'OTP verified successfully' };
   }
 }
