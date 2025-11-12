@@ -1,63 +1,56 @@
-/* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable prettier/prettier */
 import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
-import { SupabaseService } from '../supabase/supabase.service';
-import * as bcrypt from 'bcrypt';
-import * as jwt from 'jsonwebtoken';
-import { ConfigService } from '@nestjs/config';
+import { supabaseHelper } from './helper-service/supabase.helper';
+import { OtpHelper } from './helper-service/otp.helper';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private supabaseService: SupabaseService,
-    private configService: ConfigService,
+    private supabaseHelper: supabaseHelper,
+    private otpHelper: OtpHelper,
   ) {}
 
   async register(email: string, password: string, username: string) {
     try {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await this.supabaseService.createUser(email, hashedPassword, username);
+      const user = await this.supabaseHelper.createUser(email, password, username);
 
       if (!user) {
-        throw new ConflictException('User with this email or username already exists');
+        throw new ConflictException('Registration failed');
       }
+      await this.otpHelper.sendOtp(user.id, email);
 
-      return user;
+      return {
+        message: 'User registered successfully. OTP sent to email.',
+        user: { id: user.id, email: user.email, username: user.username },
+      };
     } catch (error) {
-      if (error instanceof ConflictException) {
-        throw error;
-      }
-      throw new ConflictException('Registration failed - user may already exist');
+      throw new ConflictException(error.message || 'Registration failed');
     }
+  }
+
+  async verifyOtp(userId: string, otp: string) {
+    return this.otpHelper.verifyOtp(userId, otp);
   }
 
   async login(email: string, password: string) {
-    const user = await this.supabaseService.getUserByEmail(email);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    try {
+      const authResult = await this.supabaseHelper.loginUser(email, password);
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) throw new UnauthorizedException('Invalid credentials');
-
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const secret = this.configService.get<string>('SUPABASE_JWT_SECRET');
-
-    if (!secret) {
-      throw new UnauthorizedException('JWT secret not configured');
+      return {
+        user: {
+          id: authResult.user.id,
+          email: authResult.user.email,
+          username: authResult.user.user_metadata?.username,
+          role: authResult.user.user_metadata?.role || 'user',
+        },
+        access_token: authResult.session.access_token,
+      };
+    } catch (error) {
+      throw new UnauthorizedException(error.message || 'Login failed');
     }
-
-    const token = jwt.sign(payload, secret, { expiresIn: '1h' });
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role,
-      },
-      access_token: token,
-    };
   }
+
 }
