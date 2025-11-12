@@ -3,12 +3,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
-import { supabaseHelper } from 'src/auth/helper-service/supabase.helper';
+import { SupabaseService } from 'src/supabase/supabase.service';
+
 @Injectable()
 export class UserService {
-    constructor(private supabaseHelper: supabaseHelper) {}
+    constructor(private supabaseService: SupabaseService) {}
     async getallUsers() {
-        return this.supabaseHelper.getAllUsers();
+        return this.supabaseService.getAllUsers();
     }
 
 }
