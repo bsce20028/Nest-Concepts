@@ -41,13 +41,19 @@ export class OtpHelper {
     const otp = this.generateOtp();
     const expiresAt = new Date(Date.now() + this.otpExpireMinutes * 60 * 1000);
 
+    await this.supabaseService
+      .supabase
+      .from('user_otps')
+      .delete()
+      .eq('user_id', userId);
+
     const { error } = await this.supabaseService
-      .getClient()
+      .supabase
       .from('user_otps')
       .insert({
         user_id: userId,
-        otp,
-        expires_at: expiresAt,
+        otp: Number(otp),
+        expires_at: expiresAt.toISOString(),
       });
 
     if (error) throw new BadRequestException(error.message);
@@ -58,10 +64,10 @@ export class OtpHelper {
 
   async verifyOtp(userId: string, otp: string) {
     const { data, error } = await this.supabaseService
-      .getClient()
+      .supabase
       .from('user_otps')
       .select('*')
-      .eq('otp', otp)
+      .eq('otp', Number(otp))
       .eq('verified', false)
       .eq('user_id', userId)
       .limit(1)
@@ -69,16 +75,74 @@ export class OtpHelper {
 
     if (error || !data) throw new BadRequestException('Invalid OTP');
 
-    if (new Date(data.expires_at as string) < new Date()) {
+    if (new Date(data.expires_at) < new Date()) {
       throw new BadRequestException('OTP expired');
     }
 
     await this.supabaseService
-      .getClient()
+      .supabase
       .from('user_otps')
       .update({ verified: true })
       .eq('id', data.id);
 
+    await this.supabaseService
+      .supabase
+      .from('user_otps')
+      .delete()
+      .neq('id', data.id)
+      .eq('user_id', userId);
+
     return { message: 'OTP verified successfully' };
+  }
+
+  async sendPasswordResetOtp(userId: string, email: string) {
+    const otp = this.generateOtp();
+    const expiresAt = new Date(Date.now() + this.otpExpireMinutes * 60 * 1000);
+
+    await this.supabaseService
+      .supabase
+      .from('user_otps')
+      .delete()
+      .eq('user_id', userId);
+
+    const { error } = await this.supabaseService
+      .supabase
+      .from('user_otps')
+      .insert({
+        user_id: userId,
+        otp: Number(otp),
+        expires_at: expiresAt.toISOString(),
+      });
+
+    if (error) throw new BadRequestException(error.message);
+
+    await this.transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Password Reset OTP',
+      text: `Your password reset OTP is ${otp}. It expires in ${this.otpExpireMinutes} minutes.`,
+    });
+
+    return { message: 'Password reset OTP sent to email' };
+  }
+
+  async checkVerifiedOtp(userId: string): Promise<boolean> {
+    const { data, error } = await this.supabaseService
+      .supabase
+      .from('user_otps')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('verified', true)
+      .order('expires_at', { ascending: false })
+      .limit(1)
+      .single();
+    console.log(data, error);
+    if (error || !data) return false;
+
+    if (new Date(data.expires_at) < new Date()) {
+      return false;
+    }
+
+    return true;
   }
 }

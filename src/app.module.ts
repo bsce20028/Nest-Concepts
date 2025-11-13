@@ -10,8 +10,18 @@ import { SupabaseModule } from './supabase/supabase.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { UserRolesController } from './user-roles/user-roles.controller';
+import refreshTokenConfig from './config/refresh-token.config';
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, UserModule, TaskModule, SupabaseModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [refreshTokenConfig],
+    }),
+    AuthModule,
+    UserModule,
+    TaskModule,
+    SupabaseModule,
+  ],
   controllers: [AppController, UserRolesController],
   providers: [
     AppService,

@@ -20,11 +20,11 @@ export class AuthService {
       if (!user) {
         throw new ConflictException('Registration failed');
       }
-      await this.otpHelper.sendOtp(user.id, email);
+      await this.otpHelper.sendOtp(user.id ?? '', email);
 
       return {
         message: 'User registered successfully. OTP sent to email.',
-        user: { id: user.id, email: user.email, username: user.username },
+        user: { id: user.id ?? '', email: user.email, username: user.username },
       };
     } catch (error) {
       throw new ConflictException(error.message || 'Registration failed');
@@ -47,9 +47,47 @@ export class AuthService {
           role: authResult.user.user_metadata?.role || 'user',
         },
         access_token: authResult.session.access_token,
+        refresh_token: authResult.session.refresh_token,
       };
     } catch (error) {
       throw new UnauthorizedException(error.message || 'Login failed');
+    }
+  }
+
+  async forgotPassword(email: string) {
+    try {
+      const userId = await this.supabaseHelper.getUserIdByEmail(email);
+      
+      if (!userId) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      await this.otpHelper.sendPasswordResetOtp(userId, email);
+
+      return {
+        message: 'Password reset OTP sent to your email.',
+        userId,
+      };
+    } catch (error) {
+      throw new UnauthorizedException(error.message || 'Failed to send OTP');
+    }
+  }
+
+  async resetPassword(userId: string, newPassword: string) {
+    try {
+      const hasVerifiedOtp = await this.otpHelper.checkVerifiedOtp(userId);
+      
+      if (!hasVerifiedOtp) {
+        throw new UnauthorizedException('Please verify OTP first');
+      }
+
+      await this.supabaseHelper.updateUserPassword(userId, newPassword);
+
+      return {
+        message: 'Password reset successfully',
+      };
+    } catch (error) {
+      throw new UnauthorizedException(error.message || 'Password reset failed');
     }
   }
 

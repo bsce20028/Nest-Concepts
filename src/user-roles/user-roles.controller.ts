@@ -1,8 +1,8 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { Roles } from 'src/guards/role/role.decorator';
-import { RoleEnum } from 'src/guards/role/role.enum';
+import { Roles } from 'src/common/decorators/role.decorator';
+import { RoleEnum } from '../common/enum/role.enum';
 import { RoleGuard } from 'src/guards/role/role.guard';
 
 @Controller('user-roles')

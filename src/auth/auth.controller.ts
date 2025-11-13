@@ -5,10 +5,13 @@ import {
   Post,
   UsePipes,
   ValidationPipe,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { CookieConfig } from '../config/cookie.config';
 
 @Controller('auth')
 export class AuthController {
@@ -27,7 +30,31 @@ export class AuthController {
   
   @Post('login')
   @UsePipes(new ValidationPipe())
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto.email, dto.password);
+  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const loginResult = await this.authService.login(dto.email, dto.password);
+    
+    res.cookie(
+      CookieConfig.REFRESH_TOKEN.name,
+      loginResult.refresh_token,
+      CookieConfig.REFRESH_TOKEN.options
+    );
+
+    return {
+      user: loginResult.user,
+      access_token: loginResult.access_token,
+      refresh_token: loginResult.refresh_token,
+    };
+  }
+
+  @Post('forgot-password')
+  @UsePipes(new ValidationPipe())
+  forgotPassword(@Body() body: { email: string }) {
+    return this.authService.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  @UsePipes(new ValidationPipe())
+  resetPassword(@Body() body: { userId: string; newPassword: string }) {
+    return this.authService.resetPassword(body.userId, body.newPassword);
   }
 }
