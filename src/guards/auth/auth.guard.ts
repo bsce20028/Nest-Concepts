@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
-//simple guard that checks for a specific static token in the Authorization header
+
 @Injectable()
 export class AuthGuard implements CanActivate {
   canActivate(
