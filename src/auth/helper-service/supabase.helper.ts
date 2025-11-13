@@ -59,6 +59,8 @@ export class supabaseHelper {
       throw new Error('Please Verify OTP , sent to your email address');
     }
 
+    await this.deleteExistingRefreshTokens(data.user.id);
+
     const expiresMs =
       this.configService.get<number>('refreshToken.expiresMs') ||
       parseInt(process.env.REFRESH_TOKEN_EXPIRY || '2592000000');
@@ -78,6 +80,15 @@ export class supabaseHelper {
       user: data.user,
       session: data.session,
     };
+  }
+
+  private async deleteExistingRefreshTokens(userId: string) {
+    const { error } = await this.supabaseService.supabase
+      .from('refresh_tokens')
+      .delete()
+      .eq('user_id', userId);
+
+    if (error) throw new Error(`Failed to clean existing tokens: ${error.message}`);
   }
   async getAllUsers() {
     const { data } = await this.supabaseService.supabase
