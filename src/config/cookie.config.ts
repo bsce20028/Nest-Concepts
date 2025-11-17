@@ -4,9 +4,16 @@ export const CookieConfig = {
     options: {
       httpOnly: true,
       secure: false,
-      sameSite: 'strict' as const,
+      sameSite: 'lax' as const,
       maxAge: parseInt(process.env.REFRESH_TOKEN_EXPIRY || '2592000000'),
       path: '/',
     },
   },
+  SKIP_ROUTES: [
+    '/auth/login',
+    '/auth/register',
+    '/auth/verify-otp',
+    '/auth/forgot-password',
+    '/auth/reset-password',
+  ],
 } as const;

@@ -1,8 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable prettier/prettier */
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { supabaseHelper } from './helper-service/supabase.helper';
 import { OtpHelper } from './helper-service/otp.helper';
 
@@ -15,7 +20,11 @@ export class AuthService {
 
   async register(email: string, password: string, username: string) {
     try {
-      const user = await this.supabaseHelper.createUser(email, password, username);
+      const user = await this.supabaseHelper.createUser(
+        email,
+        password,
+        username,
+      );
 
       if (!user) {
         throw new ConflictException('Registration failed');
@@ -57,7 +66,7 @@ export class AuthService {
   async forgotPassword(email: string) {
     try {
       const userId = await this.supabaseHelper.getUserIdByEmail(email);
-      
+
       if (!userId) {
         throw new UnauthorizedException('User not found');
       }
@@ -76,7 +85,7 @@ export class AuthService {
   async resetPassword(userId: string, newPassword: string) {
     try {
       const hasVerifiedOtp = await this.otpHelper.checkVerifiedOtp(userId);
-      
+
       if (!hasVerifiedOtp) {
         throw new UnauthorizedException('Please verify OTP first');
       }
@@ -90,5 +99,34 @@ export class AuthService {
       throw new UnauthorizedException(error.message || 'Password reset failed');
     }
   }
+  async verifyToken(token: string) {
+    return await this.supabaseHelper.verifyToken(token);
+  }
+  async refreshTokens(refreshToken: string) {
+    try {
+      const refreshResult =
+        await this.supabaseHelper.refreshSession(refreshToken);
 
+      if (!refreshResult.session || !refreshResult.user) {
+        throw new UnauthorizedException(
+          'Session is invalid or expired. Please login again.',
+        );
+      }
+      return {
+        access_token: refreshResult.session.access_token,
+        refresh_token: refreshResult.session.refresh_token,
+        user: {
+          id: refreshResult.user.id,
+          email: refreshResult.user.email,
+          username: refreshResult.user.user_metadata?.username,
+        },
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Token refresh failed', error);
+    }
+  }
+
+  async updateRefreshToken(userId: string, refreshToken: string) {
+    await this.supabaseHelper.updateRefreshToken(userId, refreshToken);
+  }
 }

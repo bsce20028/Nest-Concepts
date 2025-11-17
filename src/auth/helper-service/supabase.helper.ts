@@ -61,17 +61,11 @@ export class supabaseHelper {
 
     await this.deleteExistingRefreshTokens(data.user.id);
 
-    const expiresMs =
-      this.configService.get<number>('refreshToken.expiresMs') ||
-      parseInt(process.env.REFRESH_TOKEN_EXPIRY || '2592000000');
-
-    const expiresAt = new Date(Date.now() + expiresMs);
     const { error: insertError } = await this.supabaseService.supabase
       .from('refresh_tokens')
       .insert({
         user_id: data.user.id,
         refresh_token: data.session.refresh_token,
-        expires_at: expiresAt.toISOString(),
       });
 
     if (insertError) throw new Error(insertError.message);
@@ -88,7 +82,8 @@ export class supabaseHelper {
       .delete()
       .eq('user_id', userId);
 
-    if (error) throw new Error(`Failed to clean existing tokens: ${error.message}`);
+    if (error)
+      throw new Error(`Failed to clean existing tokens: ${error.message}`);
   }
   async getAllUsers() {
     const { data } = await this.supabaseService.supabase
@@ -116,5 +111,38 @@ export class supabaseHelper {
     if (error) throw new Error(error.message);
 
     return { message: 'Password updated successfully' };
+  }
+
+  async verifyToken(token: string) {
+    return await this.supabaseService.AuthSupabase.auth.getUser(token);
+  }
+
+  async refreshSession(refreshToken: string) {
+    const { data, error } =
+      await this.supabaseService.AuthSupabase.auth.refreshSession({
+        refresh_token: refreshToken,
+      });
+
+    if (error || !data?.session) throw error || new Error('Refresh failed');
+
+    return data;
+  }
+
+  async updateRefreshToken(
+    userId: string,
+    refreshToken: string,
+  ): Promise<void> {
+    await this.deleteExistingRefreshTokens(userId);
+
+    const { error } = await this.supabaseService.supabase
+      .from('refresh_tokens')
+      .insert({
+        user_id: userId,
+        refresh_token: refreshToken,
+      });
+
+    if (error) {
+      throw new Error('Failed to update refresh token');
+    }
   }
 }

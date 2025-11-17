@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -10,13 +10,16 @@ import { SupabaseModule } from './supabase/supabase.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { UserRolesController } from './user-roles/user-roles.controller';
-import refreshTokenConfig from './config/refresh-token.config';
+import { TokenRefreshMiddleware } from './auth/middleware/token-refresh.middleware';
+import { CookieConfig } from './config/cookie.config';
+import { winstonConfig } from './config/winston.config';  
+import { WinstonModule } from 'nest-winston/dist/winston.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [refreshTokenConfig],
     }),
+    WinstonModule.forRoot(winstonConfig),
     AuthModule,
     UserModule,
     TaskModule,
@@ -31,4 +34,16 @@ import refreshTokenConfig from './config/refresh-token.config';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(TokenRefreshMiddleware)
+      .exclude(
+        ...CookieConfig.SKIP_ROUTES.map(path => ({ 
+          path: path.replace(/^\//, ''),
+          method: RequestMethod.ALL 
+        }))
+      )
+      .forRoutes('*');
+  }
+}

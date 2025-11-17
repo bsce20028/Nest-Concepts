@@ -21,7 +21,14 @@ export class SupabaseService {
       );
       throw new Error('Missing required Supabase environment variables');
     }
+    
     this.supabase = createClient<Database>(supabaseUrl, supabaseKey);
-    this.AuthSupabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+    this.AuthSupabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false,    
+        persistSession: false,        
+        detectSessionInUrl: false
+      }
+    });
   }
 }
