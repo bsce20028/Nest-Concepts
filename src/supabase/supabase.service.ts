@@ -1,30 +1,34 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable prettier/prettier */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Injectable } from '@nestjs/common';
-import { createClient } from '@supabase/supabase-js';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '../types/database.types';
 
 @Injectable()
 export class SupabaseService {
-  private supabase;
-  private authSupabase;
+  public supabase: SupabaseClient<Database>;
+  public AuthSupabase: SupabaseClient<Database>;
+  private readonly logger = new Logger(SupabaseService.name);
 
-  constructor(private configService: ConfigService) {
-    const url = this.configService.get<string>('SUPABASE_URL');
-    const serviceKey = this.configService.get<string>('SUPABASE_SERVICE_KEY');
-    if (!url || !serviceKey) {
-      throw new Error(
-        'SUPABASE_URL and SUPABASE_SERVICE_KEY must be defined in configuration',
+  constructor(private readonly configService: ConfigService) {
+    const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
+    const supabaseKey = this.configService.get<string>('SUPABASE_SERVICE_KEY');
+    const supabaseAnonKey = this.configService.get<string>('SUPABASE_ANON_KEY');
+
+    if (!supabaseUrl || !supabaseKey || !supabaseAnonKey) {
+      this.logger.error(
+        'SUPABASE_URL, SUPABASE_SERVICE_KEY, and SUPABASE_ANON_KEY are required in the environment variables.',
       );
+      throw new Error('Missing required Supabase environment variables');
     }
-    this.supabase = createClient(url, serviceKey);
-  }
-
-  getClient() {
-    return this.supabase;
+    
+    this.supabase = createClient<Database>(supabaseUrl, supabaseKey);
+    this.AuthSupabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false,    
+        persistSession: false,        
+        detectSessionInUrl: false
+      }
+    });
   }
 }

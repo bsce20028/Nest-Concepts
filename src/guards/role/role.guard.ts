@@ -7,8 +7,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { RoleEnum } from './role.enum';
-import { ROLES_KEY } from './role.decorator';
+import { RoleEnum } from '../../common/enum/role.enum';
+import { ROLES_KEY } from '../../common/decorators/role.decorator';
 import { Reflector } from '@nestjs/core';
 
 @Injectable()
