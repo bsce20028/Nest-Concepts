@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable prettier/prettier */
 import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
@@ -12,8 +14,8 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { UserRolesController } from './user-roles/user-roles.controller';
 import { TokenRefreshMiddleware } from './auth/middleware/token-refresh.middleware';
 import { CookieConfig } from './config/cookie.config';
-import { winstonConfig } from './config/winston.config';  
-import { WinstonModule } from 'nest-winston/dist/winston.module';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from './config/winston.config';
 @Module({
   imports: [
     ConfigModule.forRoot({

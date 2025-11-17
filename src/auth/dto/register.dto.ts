@@ -15,3 +15,33 @@ export class RegisterDto {
   @IsNotEmpty()
   username: string;
 }
+
+export class RegisterUserDto {
+  @ApiProperty({ example: '0b73f1a9-5852-4770-aa2d-5f0e3653c096' })
+  id: string;
+
+  @ApiProperty({ example: 'arslan55@gmail.com' })
+  email: string;
+
+  @ApiProperty({ example: 'arslan55' })
+  username: string;
+}
+
+export class RegisterDataDto {
+  @ApiProperty({ example: 'User registered successfully. OTP sent to email.' })
+  message: string;
+
+  @ApiProperty({ type: RegisterUserDto })
+  user: RegisterUserDto;
+}
+
+export class RegisterResponseDto {
+  @ApiProperty({ example: true })
+  success: boolean;
+
+  @ApiProperty({ example: 'Request successful' })
+  message: string;
+
+  @ApiProperty({ type: RegisterDataDto })
+  data: RegisterDataDto;
+}

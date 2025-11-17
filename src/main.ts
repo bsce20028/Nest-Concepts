@@ -14,9 +14,19 @@ async function bootstrap() {
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
   });
    const config = new DocumentBuilder()
-    .setTitle('My API Docs')
-    .setDescription('Auto-generated Swagger documentation')
+    .setTitle('Task Manager API')
+    .setDescription('Task Manager API documentation')
     .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        in: 'header',
+      },
+      'access-token',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

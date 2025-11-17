@@ -112,6 +112,16 @@ export class AuthService {
           'Session is invalid or expired. Please login again.',
         );
       }
+
+      const isValidToken = await this.supabaseHelper.validateRefreshToken(
+        refreshResult.user.id,
+        refreshToken,
+      );
+
+      if (!isValidToken) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
       return {
         access_token: refreshResult.session.access_token,
         refresh_token: refreshResult.session.refresh_token,

@@ -5,13 +5,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { HashService } from './hash.service';
+
 @Injectable()
 export class supabaseHelper {
   constructor(
     private supabaseService: SupabaseService,
-    private configService: ConfigService,
+    private hashService: HashService,
   ) {}
 
   async createUser(email: string, password: string, username: string) {
@@ -61,11 +62,13 @@ export class supabaseHelper {
 
     await this.deleteExistingRefreshTokens(data.user.id);
 
+    const hashedToken = await this.hashService.hash(data.session.refresh_token);
+
     const { error: insertError } = await this.supabaseService.supabase
       .from('refresh_tokens')
       .insert({
         user_id: data.user.id,
-        refresh_token: data.session.refresh_token,
+        refresh_token: hashedToken,
       });
 
     if (insertError) throw new Error(insertError.message);
@@ -134,15 +137,31 @@ export class supabaseHelper {
   ): Promise<void> {
     await this.deleteExistingRefreshTokens(userId);
 
+    const hashedToken = await this.hashService.hash(refreshToken);
+
     const { error } = await this.supabaseService.supabase
       .from('refresh_tokens')
       .insert({
         user_id: userId,
-        refresh_token: refreshToken,
+        refresh_token: hashedToken,
       });
 
     if (error) {
       throw new Error('Failed to update refresh token');
     }
+  }
+
+  async validateRefreshToken(userId: string, refreshToken: string): Promise<boolean> {
+    const { data, error } = await this.supabaseService.supabase
+      .from('refresh_tokens')
+      .select('refresh_token')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error || !data) return false;
+
+    return await this.hashService.compare(refreshToken, data.refresh_token);
   }
 }

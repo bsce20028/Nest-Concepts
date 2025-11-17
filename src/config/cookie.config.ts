@@ -9,6 +9,16 @@ export const CookieConfig = {
       path: '/',
     },
   },
+  ACCESS_TOKEN: {
+    name: 'access_token',
+    options: {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'strict' as const,
+      maxAge: 15 * 60 * 1000,
+      path: '/',
+    },
+  },
   SKIP_ROUTES: [
     '/auth/login',
     '/auth/register',

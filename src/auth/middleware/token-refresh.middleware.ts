@@ -21,7 +21,7 @@ export class TokenRefreshMiddleware implements NestMiddleware {
   }
   async use(req: Request, res: Response, next: NextFunction) {
 
-    const accessToken = this.extractTokenFromHeader(req);
+    const accessToken = this.extractTokenFromHeader(req) || req.cookies?.[CookieConfig.ACCESS_TOKEN.name];
     const refreshToken = req.cookies?.[CookieConfig.REFRESH_TOKEN.name];
 
     if (!accessToken) {
@@ -54,6 +54,11 @@ export class TokenRefreshMiddleware implements NestMiddleware {
             newTokens.refresh_token,
           );
           res.setHeader('Authorization', `Bearer ${newTokens.access_token}`);
+          res.cookie(
+            CookieConfig.ACCESS_TOKEN.name,
+            newTokens.access_token,
+            CookieConfig.ACCESS_TOKEN.options,
+          );
           res.cookie(
             CookieConfig.REFRESH_TOKEN.name,
             newTokens.refresh_token,
