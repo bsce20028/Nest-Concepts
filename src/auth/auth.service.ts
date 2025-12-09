@@ -23,7 +23,7 @@ export class AuthService {
       await this.otpHelper.sendOtp(user.id, email);
 
       return {
-        message: 'User registered successfully.OTP sent to your email....',
+        message: 'User registered successfully.OTP sent to your email.',
         user: { id: user.id, email: user.email, username: user.username },
       };
     } catch (error) {
