@@ -9,7 +9,7 @@ pipeline{
     stages{
         stage('Clone Repo'){
             steps{
-               git branch : 'main', url: 'https://github.com/bsce20028/Nest-core.git'
+               git branch : 'main', url: 'https://github.com/bsce20028/Nest-Concepts'
             }
         }
         stage('Build Docker Image'){
