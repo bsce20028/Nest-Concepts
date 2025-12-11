@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Post,
+  Get,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -29,5 +30,9 @@ export class AuthController {
   @UsePipes(new ValidationPipe())
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto.email, dto.password);
+  }
+  @Get('profile')
+  getProfile() {
+    return {message: "It's working" };
   }
 }
