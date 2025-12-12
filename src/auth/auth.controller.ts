@@ -33,6 +33,6 @@ export class AuthController {
   }
   @Get('profile')
   getProfile() {
-    return {message: "hello nauman ali" };
+    return {message: "hello nauman ali............." };
   }
 }
